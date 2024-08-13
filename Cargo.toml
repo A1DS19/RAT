@@ -12,10 +12,10 @@ name = "zombie"
 path = "src/zombie.rs"
 
 [profile.release]
-opt-level = 3       # Optimization level, 3 is the highest
-lto = true          # Enable Link Time Optimization
-debug = false       # Disable debug symbols to reduce binary size
-codegen-units = 1   # Improves optimization by reducing parallelism
+opt-level = 3       
+lto = true          
+debug = false       
+codegen-units = 1   
 
 [dependencies]
 futures-util = "0.3.30"
