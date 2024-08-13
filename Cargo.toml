@@ -1,0 +1,14 @@
+[package]
+name = "RAT"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "c2"
+path = "src/c2.rs"
+
+[[bin]]
+name = "zombie"
+path = "src/zombie.rs"
+
+[dependencies]
