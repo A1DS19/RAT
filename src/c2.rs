@@ -1,7 +1,14 @@
 mod c2s;
 mod constants;
 
-use c2s::{routes_http::routes_http, routes_sockets::routes_sockets};
+use std::{
+    collections::HashMap,
+    sync::{Arc, Mutex},
+};
+
+use c2s::{
+    routes_http::routes_http, routes_sockets::routes_sockets, types::client_store::ClientStore,
+};
 use constants::localhost::{LOCALHOST_ADDRESS, LOCALHOST_PORT};
 use socketioxide::SocketIo;
 use tracing::info;
@@ -13,7 +20,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     let (layer, io) = SocketIo::new_layer();
 
-    routes_sockets(io);
+    let clients: ClientStore = Arc::new(Mutex::new(HashMap::new()));
+
+    routes_sockets(io, clients);
     let app = routes_http(layer);
 
     info!(

