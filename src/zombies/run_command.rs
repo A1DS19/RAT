@@ -43,5 +43,8 @@ pub fn run_command(text: &str) -> Result<String, Error> {
         })?;
 
     let stdout = String::from_utf8_lossy(&output.stdout).to_string();
+
+    println!("Command output: {}", stdout);
+
     Ok(stdout)
 }
