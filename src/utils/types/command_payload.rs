@@ -20,7 +20,6 @@ pub fn parse_command_data(payload: Payload) -> Result<CommandData, serde_json::E
         Payload::Text(text_vec) => match text_vec.get(0) {
             Some(text) => {
                 if let Some(txt) = text.as_str() {
-                    println!("Text: {:?}", txt);
                     Ok(CommandData::new("".to_string(), txt.to_string()))
                 } else {
                     Err(serde_json::Error::custom("Text is not a string"))?

