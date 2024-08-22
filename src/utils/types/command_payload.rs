@@ -1,5 +1,6 @@
 use rust_socketio::Payload;
 use serde::{de::Error, Deserialize, Serialize};
+use tracing::info;
 
 #[derive(Deserialize, Debug, Serialize)]
 pub struct CommandData {
@@ -14,7 +15,7 @@ impl CommandData {
 }
 
 pub fn parse_command_data(payload: Payload) -> Result<CommandData, serde_json::Error> {
-    println!("Payload: {:?}", payload);
+    info!("Payload: {:?}", payload);
 
     match payload {
         Payload::Text(text_vec) => match text_vec.get(0) {

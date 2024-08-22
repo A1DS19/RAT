@@ -1,10 +1,12 @@
 use std::sync::{Arc, Mutex};
 
 use super::super::super::utils::types::command_payload::CommandData;
+use super::super::display_video_feed::display_video_feed;
 use crate::{
     c2s::types::client_store::ClientStore,
     utils::base64::decode_base64_to_file::decode_base64_to_file,
 };
+use base64::{prelude::BASE64_STANDARD, Engine};
 use serde_json::Value;
 use socketioxide::extract::{Bin, Data, SocketRef};
 use tracing::info;
@@ -82,6 +84,29 @@ pub fn on_connect(socket: SocketRef, Data(_): Data<Value>, clients: ClientStore)
 
                             Err(e) => {
                                 info!("Error saving file: {:?}", e);
+                            }
+                        }
+                    }
+
+                    if output.starts_with("see-screen") {
+                        info!("Received buffer");
+                        let outputs = output.split("--").collect::<Vec<&str>>();
+                        match BASE64_STANDARD.decode(outputs[1]) {
+                            Ok(decoded) => {
+                                info!("Decoded buffer size: {}", decoded.len());
+                                match display_video_feed(decoded) {
+                                    Ok(_) => {
+                                        info!("Displaying video feed");
+                                    }
+
+                                    Err(e) => {
+                                        info!("Error displaying video feed: {:?}", e);
+                                    }
+                                }
+                            }
+
+                            Err(e) => {
+                                info!("Error decoding base64: {:?}", e);
                             }
                         }
                     }

